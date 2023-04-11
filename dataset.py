@@ -22,7 +22,7 @@ def shoelace_formula(coords):
     return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
 
-def generate_data(num_samples, seq_length_range, polygon_length_range):
+def generate_data_with_none_padding(num_samples, seq_length_range, polygon_length_range):
     data = []
     targets = []
 
@@ -42,6 +42,35 @@ def generate_data(num_samples, seq_length_range, polygon_length_range):
             area_sum += shoelace_formula(coords)
 
         sequence += [None] * (max_seq_len - seq_length)
+        data.append(sequence)
+        targets.append(area_sum)
+
+    return np.array(data), np.array(targets).reshape(-1, 1).astype(np.float32)
+
+
+def generate_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range):
+    data = []
+    targets = []
+
+    min_seq_len, max_seq_len = seq_length_range
+    min_poly_len, max_poly_len = polygon_length_range
+
+    for _ in range(num_samples):
+        seq_length = np.random.randint(min_seq_len, max_seq_len + 1)
+        sequence = []
+        area_sum = 0
+
+        for _ in range(seq_length):
+            polygon_length = np.random.randint(min_poly_len, max_poly_len + 1)
+            coords = np.random.rand(polygon_length, 2).astype(np.float32)
+            padded_coords = np.pad(coords, [(0, max_poly_len - polygon_length), (0, 0)], mode='constant', constant_values=-1)
+            sequence.append(padded_coords)
+            area_sum += shoelace_formula(coords)
+
+        for _ in range(max_seq_len - seq_length):
+            padded_coords = np.full((max_poly_len, 2), -1, dtype=np.float32)
+            sequence.append(padded_coords)
+
         data.append(sequence)
         targets.append(area_sum)
 
@@ -102,11 +131,13 @@ def main():
     # Generate data
     num_samples = 10
     seq_length_range = (1, 3)
-    polygon_length_range = (3, 5)
-    data, targets = generate_data(num_samples, seq_length_range, polygon_length_range)
-    print(data)
+    polygon_length_range = (2, 3)
+    data, targets = generate_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range)
+    print(np.shape(data), np.shape(targets))
+
     # Display polygons
     for polygons in data:
+        print(polygons)
         display_polygons(polygons, scale=200, wait_time=1000)
 
 

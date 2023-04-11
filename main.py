@@ -1,8 +1,10 @@
 import numpy as np
-from dataset import *
-from model import *
+
 import seaborn as sns
 import matplotlib.pyplot as plt
+
+from dataset import *
+from model import *
 
 
 def get_predictions(trainer, model, data_module):
@@ -31,14 +33,14 @@ def plot_true_vs_predicted(y_true, y_pred):
 if __name__ == '__main__':
 
     # input params
-    num_samples = 1000000
+    num_samples = 100
     sequence_range = [1, 3]
     polygon_range = [3, 5]
     num_position = 2
 
     # hyper params
-    data, targets = generate_data(num_samples, sequence_range, polygon_range)
-    print('target mse:', np.var(targets))
+    data, targets = generate_data_with_negative_padding(num_samples, sequence_range, polygon_range)
+    print('null mse:', np.var(targets))
 
     data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.05, test_split=0.05, num_workers=4)
     print(np.shape(targets))
