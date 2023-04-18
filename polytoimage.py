@@ -82,15 +82,34 @@ class SpatialEmbedding(nn.Module):
     # output = fc_output.view(-1, 64, 8, 8)
 
 
-# 2d deconv 추가 필요
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pool_kernel_size):
+        super(ConvBlock, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.relu = nn.ReLU(inplace=True)
+        self.batchnorm = nn.BatchNorm2d(out_channels)
+        self.maxpool = nn.MaxPool2d(pool_kernel_size)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.relu(x)
+        x = self.batchnorm(x)
+        x = self.maxpool(x)
+        return x
+
+
 class ShapeEmbedding(nn.Module):
-    def __init__(self, n_channels, d_model):
+    def __init__(self, n_channels, out_channels=[16, 32, 64]):
         super().__init__()
-        self.conv = nn.Conv2d(n_channels, d_model, kernel_size=(3, 3), padding=(1, 1))
+        self.conv_1 = ConvBlock(n_channels, out_channels[0], 3, 1, 1, 2)
+        self.conv_2 = ConvBlock(16, out_channels[1], 3, 1, 1, 2)
+        self.conv_3 = ConvBlock(32, out_channels[2], 3, 1, 1, 2)
 
     def forward(self, x):
         # x: (batch_size, n_channels, h, w)
-        x = self.conv(x)
+        x = self.conv_1(x)
+        x = self.conv_2(x)
+        x = self.conv_3(x)
         x = x.mean(dim=[2, 3])  # Global Average Pooling
         return x  # Shape: (batch_size, d_model)
 
@@ -98,12 +117,12 @@ class ShapeEmbedding(nn.Module):
 class MultiShapeEmbedding(nn.Module):
     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, num_layers, out_h, out_w):
         super().__init__()
-        n_positions = 2
+        out_channels = [16, 32, 64]
         self.positional_embedding = PositionalEmbedding(d_model, n_polygons, n_positions)
         self.polygon_transformer_embedding = PolygonEmbedding(n_positions, nhead, num_layers)
         self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
-        self.shape_embedding = ShapeEmbedding(n_channels, d_model)
-        self.fc = nn.Linear(d_model, n_outputs)
+        self.shape_embedding = ShapeEmbedding(n_channels, [16, 32, 64])
+        self.fc = nn.Linear(out_channels[-1], n_outputs)
 
     def forward(self, x):
         # x = self.positional_embedding(x)
@@ -128,7 +147,7 @@ def main():
     out_w = 10
     
     # MultiShapeEmbedding 객체 생성
-    multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels, 
+    multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels,
                                                 d_model, nhead, num_layers, out_h, out_w)
 
     # 무작위 데이터셋 생성
