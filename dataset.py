@@ -49,6 +49,7 @@ def generate_data_with_none_padding(num_samples, seq_length_range, polygon_lengt
 
 
 def generate_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range):
+    nan_value = -0.1
     data = []
     targets = []
 
@@ -68,7 +69,7 @@ def generate_data_with_negative_padding(num_samples, seq_length_range, polygon_l
             area_sum += shoelace_formula(coords)
 
         for _ in range(max_seq_len - seq_length):
-            padded_coords = np.full((max_poly_len, 2), -1, dtype=np.float32)
+            padded_coords = np.full((max_poly_len, 2), nan_value, dtype=np.float32)
             sequence.append(padded_coords)
 
         data.append(sequence)

@@ -65,7 +65,7 @@ class SpatialEmbedding(nn.Module):
         # print(x.shape)
         x = x.view(batch_size, n_channels, -1)
         # print(x.shape)
-        x = self.fc(x)
+        x = self.fc(nn.ReLU()(x))
         # print(x.shape)
         x = x.view(batch_size, n_channels, self.h, self.w)
         return x
@@ -102,8 +102,8 @@ class ShapeEmbedding(nn.Module):
     def __init__(self, n_channels, out_channels=[16, 32, 64]):
         super().__init__()
         self.conv_1 = ConvBlock(n_channels, out_channels[0], 3, 1, 1, 2)
-        self.conv_2 = ConvBlock(16, out_channels[1], 3, 1, 1, 2)
-        self.conv_3 = ConvBlock(32, out_channels[2], 3, 1, 1, 2)
+        self.conv_2 = ConvBlock(out_channels[0], out_channels[1], 3, 1, 1, 2)
+        self.conv_3 = ConvBlock(out_channels[1], out_channels[2], 3, 1, 1, 2)
 
     def forward(self, x):
         # x: (batch_size, n_channels, h, w)
@@ -117,11 +117,11 @@ class ShapeEmbedding(nn.Module):
 class MultiShapeEmbedding(nn.Module):
     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, num_layers, out_h, out_w):
         super().__init__()
-        out_channels = [16, 32, 64]
+        out_channels = [32, 64, 256]
         self.positional_embedding = PositionalEmbedding(d_model, n_polygons, n_positions)
         self.polygon_transformer_embedding = PolygonEmbedding(n_positions, nhead, num_layers)
         self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
-        self.shape_embedding = ShapeEmbedding(n_channels, [16, 32, 64])
+        self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
         self.fc = nn.Linear(out_channels[-1], n_outputs)
 
     def forward(self, x):
@@ -143,8 +143,8 @@ def main():
     d_model = 2
     nhead = 2
     num_layers = 3
-    out_h = 10
-    out_w = 10
+    out_h = 32
+    out_w = 32
     
     # MultiShapeEmbedding 객체 생성
     multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels,
