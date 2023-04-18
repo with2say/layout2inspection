@@ -25,11 +25,11 @@ def main(n_samples=10000, n_epoch=200):
     print('null mse:', np.var(targets))
     print(data.shape, targets.shape)
 
-    data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=4)
+    data_module = PolygonAreaDataModule(data, targets, batch_size=512, val_split=0.1, test_split=0.1, num_workers=4)
 
     # MultiShapeEmbedding 객체 생성
-    d_model = 16
-    nhead = 8
+    d_model = 8
+    nhead = 2
     num_layers = 4
     out_h = 8
     out_w = 8
@@ -68,4 +68,4 @@ def main(n_samples=10000, n_epoch=200):
 
 
 if __name__ == '__main__':
-    main(n_samples=1000, n_epoch=20)
+    main(n_samples=100, n_epoch=20)

@@ -98,14 +98,15 @@ class ShapeEmbedding(nn.Module):
 class MultiShapeEmbedding(nn.Module):
     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, num_layers, out_h, out_w):
         super().__init__()
+        n_positions = 2
         self.positional_embedding = PositionalEmbedding(d_model, n_polygons, n_positions)
-        self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead, num_layers)
-        self.spatial_embedding = SpatialEmbedding(n_shapes, d_model, out_h, out_w)
+        self.polygon_transformer_embedding = PolygonEmbedding(n_positions, nhead, num_layers)
+        self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
         self.shape_embedding = ShapeEmbedding(n_channels, d_model)
         self.fc = nn.Linear(d_model, n_outputs)
 
     def forward(self, x):
-        x = self.positional_embedding(x)
+        # x = self.positional_embedding(x)
         x = self.polygon_transformer_embedding(x)
         x = self.spatial_embedding(x)
         x = self.shape_embedding(x)
@@ -126,7 +127,6 @@ def main():
     out_h = 10
     out_w = 10
     
-
     # MultiShapeEmbedding 객체 생성
     multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels, 
                                                 d_model, nhead, num_layers, out_h, out_w)
