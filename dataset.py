@@ -77,6 +77,19 @@ def generate_data_with_negative_padding(num_samples, seq_length_range, polygon_l
     return np.array(data), np.array(targets).reshape(-1, 1).astype(np.float32)
 
 
+def generate_dataset(n_samples, n_channels, range_shape, range_polygon):
+    # 데이터 및 타겟을 n_channels 만큼 생성합니다.
+    datasets = [generate_data_with_negative_padding(n_samples, range_shape, range_polygon) for _ in range(n_channels)]
+
+    # 데이터를 axis=1 기준으로 연결합니다.
+    data = np.stack([dataset[0] for dataset in datasets], axis=1)
+
+    # 타겟을 모두 더합니다.
+    targets = np.sum([dataset[1] for dataset in datasets], axis=0)
+
+    return data, targets
+
+
 def draw_polygons(image, polygons, color=(0, 255, 0), thickness=1):
     for polygon in polygons:
         points = polygon.astype(np.int32).reshape((-1, 1, 2))

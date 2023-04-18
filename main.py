@@ -1,57 +1,54 @@
 import numpy as np
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-
+from utils import *
 from dataset import *
 from model import *
-
-
-def get_predictions(trainer, model, data_module):
-    model.eval()
-    model.to('cpu')
-    y_true = []
-    y_pred = []
-
-    predictions = trainer.predict(model, datamodule=data_module)
-    for pred, y in predictions:
-        y_true.extend(y.view(-1).tolist())
-        y_pred.extend(pred.view(-1).tolist())
-
-    return y_true, y_pred
-
-
-def plot_true_vs_predicted(y_true, y_pred):
-    sns.scatterplot(x=y_true, y=y_pred, alpha=0.5)
-    plt.xlabel('True Values')
-    plt.ylabel('Predicted Values')
-    plt.title('True vs Predicted Values')
-    plt.tight_layout()
-    plt.show()
+from polytoimage import *
 
 
 if __name__ == '__main__':
 
     # input params
-    num_samples = 100
-    sequence_range = [1, 3]
-    polygon_range = [3, 5]
-    num_position = 2
+    n_samples = 10000
+    n_channels = 1
+    range_shape = [1, 3]
+    range_polygon = [3, 5]
+    n_positions = 2
+    n_outputs = 1
+
+    checkpoint_path = '/workspaces/layout2inspection/lightning_logs/version_15/checkpoints/epoch=21-step=704.ckpt'
+
+    # addtional params
+    n_shapes = np.max(range_shape)
+    n_polygons = np.max(range_polygon)
 
     # hyper params
-    data, targets = generate_data_with_negative_padding(num_samples, sequence_range, polygon_range)
+    # data, targets = generate_data_with_negative_padding(n_samples, range_shape, range_polygon)
+    data, targets = generate_dataset(n_samples, n_channels, range_shape, range_polygon)
     print('null mse:', np.var(targets))
+    print(data.shape, targets.shape)
+    
+    data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=4)
+    
+    # MultiShapeEmbedding 객체 생성
+    d_model = 2
+    nhead = 2
+    num_layers = 3
+    out_h = 10
+    out_w = 10
+    layer = MultiShapeEmbedding(
+        n_positions, n_polygons, n_shapes, n_channels, n_outputs,
+        d_model, nhead, num_layers, out_h, out_w
+    )
 
-    data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.05, test_split=0.05, num_workers=4)
-    print(np.shape(targets))
-
+        
     # Create the model
-    layer = Polygons2Area(d_model=64,
-                          nhead=16,
-                          num_layers=16,
-                          num_position=num_position,
-                          num_polygons=np.max(polygon_range),
-                          dropout=0.01)
+    # layer = Polygons2Area(d_model=64,
+    #                       nhead=16,
+    #                       num_layers=16,
+    #                       num_position=num_position,
+    #                       num_polygons=np.max(polygon_range),
+    #                       dropout=0.01)
 
     # d_model = num_position
     # nhead = 2
@@ -63,12 +60,14 @@ if __name__ == '__main__':
     #                                 dim_feedforward=dim_feedforward)
 
     model = PolygonRegressor(layer)
-
-    trainer = pl.Trainer(max_epochs=3)
-    trainer.fit(model, data_module)
-    trainer.validate(model, datamodule=data_module)
+    model.load_from_checkpoint(checkpoint_path)
+    
+    trainer = pl.Trainer(max_epochs=20)
+    # trainer.fit(model, data_module)
+    # trainer.validate(model, datamodule=data_module)
 
     y_true, y_pred = get_predictions(trainer, model, data_module)
+    print(np.shape(y_true), np.shape(y_pred))
     plot_true_vs_predicted(y_true, y_pred)
 
 

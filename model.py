@@ -10,6 +10,7 @@ class PolygonRegressor(pl.LightningModule):
         super().__init__()
         self.layer = layer
         self.lr = lr
+        self.save_hyperparameters()
 
     def training_step(self, batch, batch_idx):
         polygons, areas = batch
@@ -121,3 +122,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
