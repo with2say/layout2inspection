@@ -6,7 +6,7 @@ from polytoimage import *
 
 def main(n_samples=10000, n_epoch=200):
     # input params
-    n_samples = 10000
+    n_samples = n_samples
     n_channels = 2
     range_shape = [1, 3]
     range_polygon = [3, 5]
@@ -28,11 +28,11 @@ def main(n_samples=10000, n_epoch=200):
     data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=4)
 
     # MultiShapeEmbedding 객체 생성
-    d_model = 2
-    nhead = 2
-    num_layers = 3
-    out_h = 10
-    out_w = 10
+    d_model = 32
+    nhead = 8
+    num_layers = 32
+    out_h = 16
+    out_w = 16
     layer = MultiShapeEmbedding(
         n_positions, n_polygons, n_shapes, n_channels, n_outputs,
         d_model, nhead, num_layers, out_h, out_w
@@ -58,7 +58,7 @@ def main(n_samples=10000, n_epoch=200):
     model = PolygonRegressor(layer)
     # model.load_from_checkpoint(checkpoint_path)
 
-    trainer = pl.Trainer(max_epochs=20)
+    trainer = pl.Trainer(max_epochs=n_epoch)
     trainer.fit(model, data_module)
     trainer.validate(model, datamodule=data_module)
 
@@ -68,4 +68,4 @@ def main(n_samples=10000, n_epoch=200):
 
 
 if __name__ == '__main__':
-    main(n_samples=10000, n_epoch=200)
+    main(n_samples=100, n_epoch=200)
