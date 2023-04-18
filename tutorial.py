@@ -4,7 +4,7 @@ from model import *
 from polytoimage import *
 
 
-def main():
+def main(n_samples=10000, n_epoch=200):
     # input params
     n_samples = 10000
     n_channels = 2
@@ -68,4 +68,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(n_samples=10000, n_epoch=200)
