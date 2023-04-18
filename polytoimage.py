@@ -117,7 +117,7 @@ class ShapeEmbedding(nn.Module):
 class MultiShapeEmbedding(nn.Module):
     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, num_layers, out_h, out_w):
         super().__init__()
-        out_channels = [32, 64, 256]
+        out_channels = [32, 64, 128]
         self.positional_embedding = PositionalEmbedding(d_model, n_polygons, n_positions)
         self.polygon_transformer_embedding = PolygonEmbedding(n_positions, nhead, num_layers)
         self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
