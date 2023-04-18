@@ -28,9 +28,9 @@ def main(n_samples=10000, n_epoch=200):
     data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=4)
 
     # MultiShapeEmbedding 객체 생성
-    d_model = 32
+    d_model = 16
     nhead = 8
-    num_layers = 32
+    num_layers = 8
     out_h = 16
     out_w = 16
     layer = MultiShapeEmbedding(
