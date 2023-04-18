@@ -30,9 +30,9 @@ def main(n_samples=10000, n_epoch=200):
     # MultiShapeEmbedding 객체 생성
     d_model = 16
     nhead = 8
-    num_layers = 8
-    out_h = 16
-    out_w = 16
+    num_layers = 4
+    out_h = 8
+    out_w = 8
     layer = MultiShapeEmbedding(
         n_positions, n_polygons, n_shapes, n_channels, n_outputs,
         d_model, nhead, num_layers, out_h, out_w
@@ -68,4 +68,4 @@ def main(n_samples=10000, n_epoch=200):
 
 
 if __name__ == '__main__':
-    main(n_samples=100, n_epoch=200)
+    main(n_samples=1000, n_epoch=20)
