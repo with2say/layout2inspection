@@ -1,22 +1,19 @@
-import numpy as np
-
 from utils import *
 from dataset import *
 from model import *
 from polytoimage import *
 
 
-if __name__ == '__main__':
-
+def main():
     # input params
     n_samples = 10000
-    n_channels = 1
+    n_channels = 2
     range_shape = [1, 3]
     range_polygon = [3, 5]
     n_positions = 2
     n_outputs = 1
 
-    checkpoint_path = '/workspaces/layout2inspection/lightning_logs/version_15/checkpoints/epoch=21-step=704.ckpt'
+    # checkpoint_path = '/workspaces/layout2inspection/lightning_logs/version_15/checkpoints/epoch=21-step=704.ckpt'
 
     # addtional params
     n_shapes = np.max(range_shape)
@@ -27,9 +24,9 @@ if __name__ == '__main__':
     data, targets = generate_dataset(n_samples, n_channels, range_shape, range_polygon)
     print('null mse:', np.var(targets))
     print(data.shape, targets.shape)
-    
+
     data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=4)
-    
+
     # MultiShapeEmbedding 객체 생성
     d_model = 2
     nhead = 2
@@ -41,7 +38,6 @@ if __name__ == '__main__':
         d_model, nhead, num_layers, out_h, out_w
     )
 
-        
     # Create the model
     # layer = Polygons2Area(d_model=64,
     #                       nhead=16,
@@ -60,14 +56,16 @@ if __name__ == '__main__':
     #                                 dim_feedforward=dim_feedforward)
 
     model = PolygonRegressor(layer)
-    model.load_from_checkpoint(checkpoint_path)
-    
+    # model.load_from_checkpoint(checkpoint_path)
+
     trainer = pl.Trainer(max_epochs=20)
-    # trainer.fit(model, data_module)
-    # trainer.validate(model, datamodule=data_module)
+    trainer.fit(model, data_module)
+    trainer.validate(model, datamodule=data_module)
 
     y_true, y_pred = get_predictions(trainer, model, data_module)
     print(np.shape(y_true), np.shape(y_pred))
     plot_true_vs_predicted(y_true, y_pred)
 
 
+if __name__ == '__main__':
+    main()
