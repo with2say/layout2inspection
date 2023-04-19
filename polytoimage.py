@@ -1,12 +1,12 @@
-import math
 import torch
 import torch.nn as nn
 
 
 class PositionalEmbedding(nn.Module):
-    def __init__(self, d_model):
+    def __init__(self, input_dim,  d_model):
         super().__init__()
         self.d_model = d_model
+        self.linear = nn.Linear(input_dim, d_model)
 
     def forward(self, x):
         # x: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
@@ -17,7 +17,9 @@ class PositionalEmbedding(nn.Module):
                 pos_enc[:, :, :, i, j] = torch.sin(x[:, :, :, i, j] / (10000 ** ((2 * i + j) / (2 * self.d_model))))
         
         x = x + pos_enc
-        return x  # Shape: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
+        x = x.view(batch_size, n_channels, n_shapes, n_polygons, -1)
+        x = self.linear(x)
+        return x  # Shape: (batch_size, n_channels, n_shapes, n_polygons, d_model)
 
 
 # # 좌표가 normalization된 벡터 형태가 된다면 따로 처리 필요 없음.
@@ -65,7 +67,8 @@ class PolygonEmbedding(nn.Module):
         self.positionwise_feedforward = nn.Sequential(
             nn.Linear(d_model, d_model),
             nn.ReLU(),
-            nn.Linear(d_model, d_model)
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
         )
 
     def forward(self, x):
@@ -83,6 +86,7 @@ class PolygonEmbedding(nn.Module):
 
         x = x.mean(dim=1)  # Shape: (batch_size * n_channels * n_shapes, d_model)
         x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
+        # print(11, x.shape)
         return x
 
 
@@ -98,7 +102,7 @@ class SpatialEmbedding(nn.Module):
         batch_size, n_channels, n_shapes, d_model = x.shape
         # print(x.shape)
         x = x.view(batch_size, n_channels, -1)
-        # print(x.shape)
+        # print(22, x.shape)
         x = self.fc(nn.ReLU()(x))
         # print(x.shape)
         x = x.view(batch_size, n_channels, self.h, self.w)
@@ -152,9 +156,9 @@ class MultiShapeEmbedding(nn.Module):
     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, out_h, out_w):
         super().__init__()
         out_channels = [32, 64, 128]
-        self.positional_embedding = PositionalEmbedding(d_model)
+        self.positional_embedding = PositionalEmbedding(n_positions, d_model)
         self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead)
-        self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
+        self.spatial_embedding = SpatialEmbedding(n_shapes, d_model, out_h, out_w)
         self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
         self.fc = nn.Linear(out_channels[-1], n_outputs)
 
