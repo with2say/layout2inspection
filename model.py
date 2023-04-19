@@ -23,7 +23,7 @@ class PolygonRegressor(pl.LightningModule):
         polygons, areas = batch
         outputs = self.layer(polygons)
         loss = nn.MSELoss()(outputs, areas)
-        self.log("valid_loss", loss)
+        self.log("val_loss", loss)
         return loss
 
     def predict_step(self, batch, batch_idx):
