@@ -44,6 +44,7 @@ def get_trainer(n_epoch):
 
     # Trainer 객체 생성
     trainer = pl.Trainer(
+        accelator='auto',
         max_epochs=n_epoch,
         # gradient_clip_val=gradient_clip_val,
         log_every_n_steps=30,
