@@ -45,7 +45,7 @@ def get_trainer(n_epoch):
     # Trainer 객체 생성
     trainer = pl.Trainer(
         max_epochs=n_epoch,
-        gradient_clip_val=gradient_clip_val,
+        # gradient_clip_val=gradient_clip_val,
         callbacks=[early_stop_callback, checkpoint_callback, swa_callback],
     )
     return trainer
