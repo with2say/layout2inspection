@@ -1,7 +1,5 @@
 import numpy as np
-import cv2
 from torch.utils.data import DataLoader, random_split, Dataset
-
 import pytorch_lightning as pl
 
 
@@ -92,6 +90,7 @@ def generate_dataset(n_samples, n_channels, range_shape, range_polygon):
 
 
 def draw_polygons(image, polygons, color=(0, 255, 0), thickness=1):
+    import cv2
     for polygon in polygons:
         points = polygon.astype(np.int32).reshape((-1, 1, 2))
         image = cv2.polylines(image, [points], isClosed=True, color=color, thickness=thickness)
