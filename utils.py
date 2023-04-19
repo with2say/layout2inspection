@@ -1,7 +1,7 @@
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import torch
 import torch.nn.functional as F
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
@@ -42,9 +42,22 @@ def get_trainer(n_epoch):
         # verbose=True,
     )
 
+    import os
+    # GPU 사용 설정
+    if torch.cuda.is_available():
+        gpus = 1  # 사용할 GPU 개수를 지정합니다.
+    else:
+        gpus = None
+
+    if "COLAB_TPU_ADDR" in os.environ:
+        tpu_cores = 8  # 사용할 TPU 코어 개수를 지정합니다.
+    else:
+        tpu_cores = None
+
     # Trainer 객체 생성
     trainer = pl.Trainer(
-        accelerator='auto',
+        gpus=gpus, 
+        tpu_cores=tpu_cores,
         max_epochs=n_epoch,
         # gradient_clip_val=gradient_clip_val,
         log_every_n_steps=30,
