@@ -35,7 +35,7 @@ def main(n_samples=10000, n_epoch=200):
     out_w = 32
     layer = MultiShapeEmbedding(
         n_positions, n_polygons, n_shapes, n_channels, n_outputs,
-        d_model, nhead, num_layers, out_h, out_w
+        d_model, nhead, out_h, out_w
     )
 
     # Create the model

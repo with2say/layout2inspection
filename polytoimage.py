@@ -4,19 +4,18 @@ import torch.nn as nn
 
 
 class PositionalEmbedding(nn.Module):
-    def __init__(self, d_model, n_polygons):
+    def __init__(self, d_model):
         super().__init__()
         self.d_model = d_model
-        self.n_polygons = n_polygons
 
     def forward(self, x):
         # x: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
-        batch_size, n_channels, n_shapes, _, _ = x.shape
-        x = x.view(batch_size, n_channels, n_shapes, self.n_polygons, -1)
+        batch_size, n_channels, n_shapes, n_polygons, _ = x.shape
+        x = x.view(batch_size, n_channels, n_shapes, n_polygons, -1)
 
-        position = torch.arange(0, self.n_polygons, dtype=torch.float32).unsqueeze(1)
+        position = torch.arange(0, n_polygons, dtype=torch.float32).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * -(math.log(10000.0) / self.d_model))
-        pos_enc = torch.zeros(self.n_polygons, self.d_model)
+        pos_enc = torch.zeros(n_polygons, self.d_model)
         pos_enc[:, 0::2] = torch.sin(position * div_term)
         pos_enc[:, 1::2] = torch.cos(position * div_term)
         pos_enc = pos_enc.unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch_size, n_channels, n_shapes, 1, 1)
@@ -41,37 +40,54 @@ class PositionalEmbedding(nn.Module):
 
 
 # (batch_size, n_channels, n_shapes, n_polygons, d_model) -> (batch_size, n_channels, n_shapes, d_model) 
-# 멀티헤드로 전환 필요
+# single head
+# class PolygonEmbedding(nn.Module):
+#     def __init__(self, d_model, nhead, num_layers):
+#         super().__init__()
+#         self.d_model = d_model
+
+#         self.encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead)
+#         self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+
+#     def forward(self, x):
+#         # x: (batch_size, n_channels, n_shapes, n_polygons, d_model)
+#         batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
+#         x = x.view(-1, x.size(3), x.size(4))  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
+#         x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
+#         x = self.encoder(x)
+#         x = x.mean(dim=0)  # Shape: (batch_size * n_channels * n_shapes, d_model)
+#         x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
+#         return x
+
+
 class PolygonEmbedding(nn.Module):
-    def __init__(self, d_model, nhead, num_layers):
+    def __init__(self, d_model, nhead):
         super().__init__()
         self.d_model = d_model
 
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead)
-        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+        self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
+        self.positionwise_feedforward = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
+            nn.Linear(d_model, d_model)
+        )
 
     def forward(self, x):
         # x: (batch_size, n_channels, n_shapes, n_polygons, d_model)
         batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
         x = x.view(-1, x.size(3), x.size(4))  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
         x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
-        x = self.encoder(x)
-        x = x.mean(dim=0)  # Shape: (batch_size * n_channels * n_shapes, d_model)
+        
+        attn_output, _ = self.self_attention(x, x, x)  # Self-attention
+        x = x + attn_output
+        x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
+
+        ff_output = self.positionwise_feedforward(x)
+        x = x + ff_output
+
+        x = x.mean(dim=1)  # Shape: (batch_size * n_channels * n_shapes, d_model)
         x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
         return x
-    
-    # # 입력 shape: (batch_size, seq_len, hidden_size)
-    # input = torch.randn(2, 10, 512)
-
-    # # 위치 인코딩 추가
-    # positional_encoder = PositionalEncoder(hidden_size=512, max_seq_len=10)
-    # input = positional_encoder(input)
-
-    # # 멀티헤드 어텐션 레이어
-    # multi_head_attention = MultiHeadAttention(n_heads=8, input_dim=512, 
-    #                                         head_dim=64, output_dim=512, 
-    #                                         dropout=0.1)
-    # attention_output = multi_head_attention(input)
 
 
 # (batch_size, n_channels, n_shapes, d_model) -> (batch_size, n_channels, h, w) 
@@ -137,17 +153,17 @@ class ShapeEmbedding(nn.Module):
 
 
 class MultiShapeEmbedding(nn.Module):
-    def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, num_layers, out_h, out_w):
+    def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, out_h, out_w):
         super().__init__()
         out_channels = [32, 64, 128]
-        self.positional_embedding = PositionalEmbedding(d_model, n_polygons)
-        self.polygon_transformer_embedding = PolygonEmbedding(n_positions, nhead, num_layers)
+        self.positional_embedding = PositionalEmbedding(d_model)
+        self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead)
         self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
         self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
         self.fc = nn.Linear(out_channels[-1], n_outputs)
 
     def forward(self, x):
-        # x = self.positional_embedding(x)
+        x = self.positional_embedding(x)
         x = self.polygon_transformer_embedding(x)
         x = self.spatial_embedding(x)
         x = self.shape_embedding(x)
@@ -161,7 +177,7 @@ def main():
     n_polygons = 5
     n_shapes = 3
     n_channels = 4
-
+    n_outputs = 1
     d_model = 2
     nhead = 2
     num_layers = 3
@@ -169,11 +185,11 @@ def main():
     out_w = 32
     
     # MultiShapeEmbedding 객체 생성
-    multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels,
-                                                d_model, nhead, num_layers, out_h, out_w)
+    multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels, n_outputs,
+                                                d_model, nhead, out_h, out_w)
 
     # 무작위 데이터셋 생성
-    batch_size = 8
+    batch_size = 2
     input_data = torch.randn(batch_size, n_channels, n_shapes, n_polygons, n_positions)
 
     # MultiShapeEmbedding 실행
