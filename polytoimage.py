@@ -1,21 +1,43 @@
+import math
 import torch
 import torch.nn as nn
 
 
-# 좌표가 normalization된 벡터 형태가 된다면 따로 처리 필요 없음.
 class PositionalEmbedding(nn.Module):
-    def __init__(self, d_model, n_polygons, n_positions):
+    def __init__(self, d_model, n_polygons):
         super().__init__()
-        self.embedding = nn.Linear(n_positions, d_model)
+        self.d_model = d_model
         self.n_polygons = n_polygons
 
     def forward(self, x):
         # x: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
         batch_size, n_channels, n_shapes, _, _ = x.shape
         x = x.view(batch_size, n_channels, n_shapes, self.n_polygons, -1)
-        x = self.embedding(x)
+
+        position = torch.arange(0, self.n_polygons, dtype=torch.float32).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * -(math.log(10000.0) / self.d_model))
+        pos_enc = torch.zeros(self.n_polygons, self.d_model)
+        pos_enc[:, 0::2] = torch.sin(position * div_term)
+        pos_enc[:, 1::2] = torch.cos(position * div_term)
+        pos_enc = pos_enc.unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch_size, n_channels, n_shapes, 1, 1)
+
+        x = x * pos_enc
         return x  # Shape: (batch_size, n_channels, n_shapes, n_polygons, d_model)
 
+
+# # 좌표가 normalization된 벡터 형태가 된다면 따로 처리 필요 없음.
+# class PositionalEmbedding(nn.Module):
+#     def __init__(self, d_model, n_polygons, n_positions):
+#         super().__init__()
+#         self.embedding = nn.Linear(n_positions, d_model)
+#         self.n_polygons = n_polygons
+
+#     def forward(self, x):
+#         # x: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
+#         batch_size, n_channels, n_shapes, _, _ = x.shape
+#         x = x.view(batch_size, n_channels, n_shapes, self.n_polygons, -1)
+#         x = self.embedding(x)
+#         return x  # Shape: (batch_size, n_channels, n_shapes, n_polygons, d_model)
 
 
 # (batch_size, n_channels, n_shapes, n_polygons, d_model) -> (batch_size, n_channels, n_shapes, d_model) 
@@ -118,7 +140,7 @@ class MultiShapeEmbedding(nn.Module):
     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, num_layers, out_h, out_w):
         super().__init__()
         out_channels = [32, 64, 128]
-        self.positional_embedding = PositionalEmbedding(d_model, n_polygons, n_positions)
+        self.positional_embedding = PositionalEmbedding(d_model, n_polygons)
         self.polygon_transformer_embedding = PolygonEmbedding(n_positions, nhead, num_layers)
         self.spatial_embedding = SpatialEmbedding(n_shapes, n_positions, out_h, out_w)
         self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
