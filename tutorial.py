@@ -63,8 +63,10 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
 
     y_true, y_pred = get_predictions(trainer, model, data_module)
     print(np.shape(y_true), np.shape(y_pred))
-    plot_true_vs_predicted(y_true, y_pred)
     evaluate_regression(y_true, y_pred)
+
+    plot_true_vs_predicted(y_true, y_pred)
+    
 
 
 if __name__ == '__main__':
@@ -76,4 +78,5 @@ if __name__ == '__main__':
         out_h=16,
         out_w=16,
         )
+    
     
