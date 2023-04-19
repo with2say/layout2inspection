@@ -65,11 +65,11 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
     print(np.shape(y_true), np.shape(y_pred))
     plot_true_vs_predicted(y_true, y_pred)
     evaluate_regression(y_true, y_pred)
-    
+
 
 if __name__ == '__main__':
     main(
-        n_samples=10, 
+        n_samples=20, 
         n_epoch=1, 
         d_model=16,
         nhead=8,
