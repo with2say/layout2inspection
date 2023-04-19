@@ -4,7 +4,7 @@ from model import *
 from polytoimage import *
 
 
-def main(n_samples=10000, n_epoch=200):
+def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
     # input params
     n_samples = n_samples
     n_channels = 2
@@ -28,10 +28,10 @@ def main(n_samples=10000, n_epoch=200):
     data_module = PolygonAreaDataModule(data, targets, batch_size=512, val_split=0.1, test_split=0.1, num_workers=2)
 
     # MultiShapeEmbedding 객체 생성
-    d_model = 32
-    nhead = 2
-    out_h = 32
-    out_w = 32
+    d_model = d_model
+    nhead = nhead
+    out_h = out_h
+    out_w = out_w
     layer = MultiShapeEmbedding(
         n_positions, n_polygons, n_shapes, n_channels, n_outputs,
         d_model, nhead, out_h, out_w
@@ -67,5 +67,12 @@ def main(n_samples=10000, n_epoch=200):
 
 
 if __name__ == '__main__':
-    main(n_samples=10, n_epoch=1)
+    main(
+        n_samples=10, 
+        n_epoch=1, 
+        d_model=16,
+        nhead=8,
+        out_h=16,
+        out_w=16,
+        )
     
