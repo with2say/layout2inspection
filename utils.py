@@ -8,6 +8,49 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 
+
+def get_trainer(n_epoch):
+    import pytorch_lightning as pl
+    from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, StochasticWeightAveraging
+
+    # 기울기 클리핑 설정
+    gradient_clip_val = 1.0
+
+    # 조기 종료 설정
+    early_stop_callback = EarlyStopping(
+        monitor="val_loss",
+        min_delta=0.0001,
+        patience=10,
+        verbose=True,
+        mode="min",
+    )
+
+    # 체크포인트 저장 설정
+    checkpoint_callback = ModelCheckpoint(
+        monitor="val_loss",
+        dirpath="checkpoints",
+        filename="best-checkpoint",
+        save_top_k=1,
+        verbose=True,
+        mode="min",
+    )
+
+    # Stochastic Weight Averaging 설정
+    swa_callback = StochasticWeightAveraging(
+        swa_epoch_start=0.8,
+        swa_lrs=5e-4,
+        # verbose=True,
+    )
+
+    # Trainer 객체 생성
+    trainer = pl.Trainer(
+        max_epochs=n_epoch,
+        gradient_clip_val=gradient_clip_val,
+        callbacks=[early_stop_callback, checkpoint_callback, swa_callback],
+    )
+    return trainer
+
+
 def get_predictions(trainer, model, data_module):
     model.eval()
     model.to('cpu')

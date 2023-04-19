@@ -57,7 +57,9 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
     model = PolygonRegressor(layer)
     # model.load_from_checkpoint(checkpoint_path)
 
-    trainer = pl.Trainer(max_epochs=n_epoch)
+
+    # trainer = pl.Trainer(max_epochs=n_epoch)
+    trainer = get_trainer(n_epoch)
     trainer.fit(model, data_module)
     trainer.validate(model, datamodule=data_module)
 
@@ -66,17 +68,16 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
     evaluate_regression(y_true, y_pred)
 
     plot_true_vs_predicted(y_true, y_pred)
-    
+
 
 
 if __name__ == '__main__':
     main(
-        n_samples=20, 
-        n_epoch=1, 
-        d_model=16,
-        nhead=8,
-        out_h=16,
-        out_w=16,
-        )
-    
+        n_samples=20000, 
+        n_epoch=300, 
+        d_model=128,
+        nhead=32,
+        out_h=32,
+        out_w=32,
+    )
     
