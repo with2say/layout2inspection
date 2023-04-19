@@ -34,8 +34,8 @@ class PolygonRegressor(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, verbose=True)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, verbose=True)
+        return {"optimizer": optimizer} # "lr_scheduler": scheduler, "monitor": "val_loss"
     
 
 class PolygonEmbedding(nn.Module):
