@@ -19,7 +19,7 @@ def get_trainer(n_epoch):
     # 조기 종료 설정
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
-        min_delta=0.00005,
+        min_delta=0.00001,
         patience=20,
         verbose=True,
         mode="min",
@@ -37,8 +37,8 @@ def get_trainer(n_epoch):
 
     # Stochastic Weight Averaging 설정
     swa_callback = StochasticWeightAveraging(
-        swa_epoch_start=0.8,
-        swa_lrs=3e-3,
+        swa_epoch_start=100,
+        swa_lrs=1e-5,
         # verbose=True,
     )
 
