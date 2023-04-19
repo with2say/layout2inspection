@@ -11,17 +11,13 @@ class PositionalEmbedding(nn.Module):
     def forward(self, x):
         # x: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
         batch_size, n_channels, n_shapes, n_polygons, _ = x.shape
-        x = x.view(batch_size, n_channels, n_shapes, n_polygons, -1)
-
-        position = torch.arange(0, n_polygons, dtype=torch.float32).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * -(math.log(10000.0) / self.d_model))
-        pos_enc = torch.zeros(n_polygons, self.d_model)
-        pos_enc[:, 0::2] = torch.sin(position * div_term)
-        pos_enc[:, 1::2] = torch.cos(position * div_term)
-        pos_enc = pos_enc.unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch_size, n_channels, n_shapes, 1, 1)
-
-        x = x * pos_enc
-        return x  # Shape: (batch_size, n_channels, n_shapes, n_polygons, d_model)
+        pos_enc = torch.zeros_like(x)
+        for i in range(n_polygons):
+            for j in range(2):
+                pos_enc[:, :, :, i, j] = torch.sin(x[:, :, :, i, j] / (10000 ** ((2 * i + j) / (2 * self.d_model))))
+        
+        x = x + pos_enc
+        return x  # Shape: (batch_size, n_channels, n_shapes, n_polygons, n_positions)
 
 
 # # 좌표가 normalization된 벡터 형태가 된다면 따로 처리 필요 없음.
