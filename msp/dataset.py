@@ -159,7 +159,7 @@ def main():
     num_samples = 10
     seq_length_range = (1, 3)
     polygon_length_range = (2, 3)
-    data, targets = generate_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range)
+    data, targets = generaBte_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range)
     print(np.shape(data), np.shape(targets))
 
     # Display polygons
