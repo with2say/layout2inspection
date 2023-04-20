@@ -69,7 +69,7 @@ class PolygonEmbedding(nn.Module):
         # self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
 
         self.multihead_attention_layers = nn.ModuleList([
-            nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
+            nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead, batch_first=True)
             for _ in range(num_layers)
         ])
         
@@ -83,15 +83,15 @@ class PolygonEmbedding(nn.Module):
     def forward(self, x):
         # x: (batch_size, n_channels, n_shapes, n_polygons, d_model)
         batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
-        x = x.view(-1, x.size(3), x.size(4))  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
-        x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
+        x = x.view(-1, n_polygons, d_model)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
+        # x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
 
         for layer in self.multihead_attention_layers:
             attn_output, _ = layer(x, x, x)  # Self-attention
             x = x + attn_output
             x = self.norm1(x)
 
-        x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
+        # x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
 
         ff_output = self.positionwise_feedforward(x)
         x = x + ff_output
@@ -100,29 +100,6 @@ class PolygonEmbedding(nn.Module):
         x = x.mean(dim=1)  # Shape: (batch_size * n_channels * n_shapes, d_model)
         x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
         return x
-
-
-    # def forward(self, x):
-    #     # x: (batch_size, n_channels, n_shapes, n_polygons, d_model)
-    #     batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
-    #     x = x.view(-1, x.size(3), x.size(4))  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
-    #     x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
-
-    #     # for layer in self.multihead_attention_layers:
-    #     #     # MultiheadAttention requires inputs
-    #     #     x, _ = layer(x, x, x)
-
-    #     attn_output, _ = self.self_attention(x, x, x)  # Self-attention
-    #     x = x + attn_output
-    #     x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
-
-    #     ff_output = self.positionwise_feedforward(x)
-    #     x = x + ff_output
-
-    #     x = x.mean(dim=1)  # Shape: (batch_size * n_channels * n_shapes, d_model)
-    #     x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
-    #     # print(11, x.shape)
-    #     return x
 
 
 # (batch_size, n_channels, n_shapes, d_model) -> (batch_size, n_channels, h, w) 
@@ -135,25 +112,11 @@ class SpatialEmbedding(nn.Module):
 
     def forward(self, x):
         batch_size, n_channels, n_shapes, d_model = x.shape
-        # print(x.shape)
         x = x.view(batch_size, n_channels, -1)
-        # print(22, x.shape)
         x = self.fc(nn.ReLU()(x))
-        # print(x.shape)
         x = x.view(batch_size, n_channels, self.h, self.w)
         return x
     
-    # # 어텐션 리턴값에 LayerNorm 추가
-    # attention_output = nn.LayerNorm(512)(input + attention_output)
-
-    # # 2개의 FC 레이어 적용
-    # fc1 = nn.Linear(512, 2048)
-    # fc2 = nn.Linear(2048, 512)
-    # fc_output = fc2(nn.ReLU()(fc1(attention_output)))
-
-    # # 출력 shape: (batch_size, n_channels, image_height, image_width)
-    # output = fc_output.view(-1, 64, 8, 8)
-
 
 class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pool_kernel_size):
