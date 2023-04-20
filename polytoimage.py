@@ -63,9 +63,12 @@ class PolygonEmbedding(nn.Module):
         super().__init__()
         self.d_model = d_model
 
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+
         # self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
 
-        self.self_attention = nn.ModuleList([
+        self.multihead_attention_layers = nn.ModuleList([
             nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
             for _ in range(num_layers)
         ])
@@ -82,18 +85,44 @@ class PolygonEmbedding(nn.Module):
         batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
         x = x.view(-1, x.size(3), x.size(4))  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
         x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
-        
-        attn_output, _ = self.self_attention(x, x, x)  # Self-attention
-        x = x + attn_output
+
+        for layer in self.multihead_attention_layers:
+            attn_output, _ = layer(x, x, x)  # Self-attention
+            x = x + attn_output
+            x = self.norm1(x)
+
         x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
 
         ff_output = self.positionwise_feedforward(x)
         x = x + ff_output
+        x = self.norm2(x)
 
         x = x.mean(dim=1)  # Shape: (batch_size * n_channels * n_shapes, d_model)
         x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
-        # print(11, x.shape)
         return x
+
+
+    # def forward(self, x):
+    #     # x: (batch_size, n_channels, n_shapes, n_polygons, d_model)
+    #     batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
+    #     x = x.view(-1, x.size(3), x.size(4))  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
+    #     x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
+
+    #     # for layer in self.multihead_attention_layers:
+    #     #     # MultiheadAttention requires inputs
+    #     #     x, _ = layer(x, x, x)
+
+    #     attn_output, _ = self.self_attention(x, x, x)  # Self-attention
+    #     x = x + attn_output
+    #     x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
+
+    #     ff_output = self.positionwise_feedforward(x)
+    #     x = x + ff_output
+
+    #     x = x.mean(dim=1)  # Shape: (batch_size * n_channels * n_shapes, d_model)
+    #     x = x.view(batch_size, n_channels, n_shapes, -1)  # Shape: (batch_size, n_channel, n_shape, d_model)
+    #     # print(11, x.shape)
+    #     return x
 
 
 # (batch_size, n_channels, n_shapes, d_model) -> (batch_size, n_channels, h, w) 
@@ -163,7 +192,7 @@ class MultiShapeEmbedding(nn.Module):
         super().__init__()
         out_channels = [32, 64, 128]
         self.positional_embedding = PositionalEmbedding(n_positions, d_model)
-        self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead)
+        self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead, n_layers)
         self.spatial_embedding = SpatialEmbedding(n_shapes, d_model, out_h, out_w)
         self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
         self.fc = nn.Linear(out_channels[-1], n_outputs)
