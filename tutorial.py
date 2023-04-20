@@ -4,7 +4,7 @@ from model import *
 from polytoimage import *
 
 
-def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
+def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, n_layers=1, out_h=16, out_w=16):
     # input params
     n_samples = n_samples
     n_channels = 2
@@ -30,12 +30,14 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
     # MultiShapeEmbedding 객체 생성
     d_model = d_model
     nhead = nhead
+    n_layers = n_layers
     out_h = out_h
     out_w = out_w
     layer = MultiShapeEmbedding(
         n_positions, n_polygons, n_shapes, n_channels, n_outputs,
-        d_model, nhead, out_h, out_w
+        d_model, nhead, n_layers, out_h, out_w
     )
+
 
     # Create the model
     # layer = Polygons2Area(d_model=64,
@@ -57,9 +59,10 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
     model = PolygonRegressor(layer)
     # model.load_from_checkpoint(checkpoint_path)
 
+    from finetuning_scheduler import FinetuningScheduler
+    trainer = pl.Trainer(max_epochs=n_epoch, callbacks=[FinetuningScheduler()])
+    # trainer = get_trainer(n_epoch)
 
-    # trainer = pl.Trainer(max_epochs=n_epoch)
-    trainer = get_trainer(n_epoch)
     trainer.fit(model, data_module)
     trainer.validate(model, datamodule=data_module)
 
@@ -73,8 +76,8 @@ def main(n_samples=10000, n_epoch=200, d_model=16, nhead=8, out_h=16, out_w=16):
 
 if __name__ == '__main__':
     main(
-        n_samples=20000, 
-        n_epoch=300, 
+        n_samples=10, 
+        n_epoch=1, 
         d_model=128,
         nhead=32,
         out_h=32,

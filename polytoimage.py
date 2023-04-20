@@ -59,11 +59,17 @@ class PositionalEmbedding(nn.Module):
 
 
 class PolygonEmbedding(nn.Module):
-    def __init__(self, d_model, nhead):
+    def __init__(self, d_model, nhead, num_layers=1):
         super().__init__()
         self.d_model = d_model
 
-        self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
+        # self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
+
+        self.self_attention = nn.ModuleList([
+            nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
+            for _ in range(num_layers)
+        ])
+        
         self.positionwise_feedforward = nn.Sequential(
             nn.Linear(d_model, d_model),
             nn.ReLU(),
@@ -153,7 +159,7 @@ class ShapeEmbedding(nn.Module):
 
 
 class MultiShapeEmbedding(nn.Module):
-    def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, out_h, out_w):
+    def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, n_layers, out_h, out_w):
         super().__init__()
         out_channels = [32, 64, 128]
         self.positional_embedding = PositionalEmbedding(n_positions, d_model)
@@ -180,13 +186,13 @@ def main():
     n_outputs = 1
     d_model = 2
     nhead = 2
-    num_layers = 3
+    n_layers = 3
     out_h = 32
     out_w = 32
     
     # MultiShapeEmbedding 객체 생성
     multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels, n_outputs,
-                                                d_model, nhead, out_h, out_w)
+                                                d_model, nhead, n_layers, out_h, out_w)
 
     # 무작위 데이터셋 생성
     batch_size = 2
