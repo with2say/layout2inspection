@@ -188,7 +188,7 @@ class MultiShapeEmbedding(nn.Module):
         self.poly_emb = PolygonEmbedding(polygon_dimension_per_head * polygon_heads, polygon_heads, polygon_layers)
         self.spatial_emb = SpatialEmbedding(num_shapes, polygon_dimension_per_head * polygon_heads, spatial_output_height, spatial_output_width)
         self.shape_emb = ShapeEmbedding(num_channels, shape_output_channels)
-        self.fc_net = FCNet(shape_output_channels[-1], num_outputs, fc_dimensions, fc_layers, fc_use_batchnorm)
+        self.fc_net = FCNet(shape_output_channels[-1], num_outputs, fc_dimensions, fc_layers, use_batchnorm=fc_use_batchnorm)
 
     def forward(self, x):
         x = self.pos_emb(x)
