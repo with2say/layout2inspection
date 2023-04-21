@@ -150,24 +150,75 @@ class ShapeEmbedding(nn.Module):
         return x  # Shape: (batch_size, d_model)
 
 
-class MultiShapeEmbedding(nn.Module):
-    def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, d_model, nhead, n_layers, out_h, out_w):
+class FCNet(nn.Module):
+    def __init__(self, input_size, output_size, hidden_size, num_layers, use_batchnorm=False):
         super().__init__()
-        out_channels = [32, 64, 128]
-        self.positional_embedding = PositionalEmbedding(n_positions, d_model)
-        self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead, n_layers)
-        self.spatial_embedding = SpatialEmbedding(n_shapes, d_model, out_h, out_w)
-        self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
-        self.fc = nn.Linear(out_channels[-1], n_outputs)
+
+        # hidden layers 생성
+        hidden_layers = []
+        for i in range(num_layers):
+            layer = nn.Linear(hidden_size if i > 0 else input_size, hidden_size)
+            hidden_layers.append(layer)
+
+            if use_batchnorm:
+                bn = nn.BatchNorm1d(hidden_size)
+                hidden_layers.append(bn)
+
+            hidden_layers.append(nn.ReLU())
+
+        # fully connected layer 생성
+        hidden_layers.append(nn.Linear(hidden_size, output_size))
+
+        # Sequential로 묶기
+        self.net = nn.Sequential(*hidden_layers)
 
     def forward(self, x):
-        x = self.positional_embedding(x)
-        x = self.polygon_transformer_embedding(x)
-        x = self.spatial_embedding(x)
-        x = self.shape_embedding(x)
-        x = self.fc(x)
-        return x
+        out = self.net(x)
+        return out
 
+
+# class MultiShapeEmbedding(nn.Module):
+#     def __init__(self, n_positions, n_polygons, n_shapes, n_channels, n_outputs, 
+#                  d_model, nhead, n_layers, out_h, out_w):
+#         super().__init__()
+#         out_channels = [32, 64, 128]
+#         self.positional_embedding = PositionalEmbedding(n_positions, d_model)
+#         self.polygon_transformer_embedding = PolygonEmbedding(d_model, nhead, n_layers)
+#         self.spatial_embedding = SpatialEmbedding(n_shapes, d_model, out_h, out_w)
+#         self.shape_embedding = ShapeEmbedding(n_channels, out_channels)
+#         self.fc_net = FCNet(input_size, hidden_size, output_size, num_layers)
+#         # self.fc = nn.Linear(out_channels[-1], n_outputs)
+
+#     def forward(self, x):
+#         x = self.positional_embedding(x)
+#         x = self.polygon_transformer_embedding(x)
+#         x = self.spatial_embedding(x)
+#         x = self.shape_embedding(x)
+#         x = self.fc_net(x)
+#         return x
+
+
+class MultiShapeEmbedding(nn.Module):
+    def __init__(self, 
+                 num_positions, num_polygons, num_shapes, num_channels, num_outputs,
+                 polygon_dimension_per_head, polygon_heads, polygon_layers, 
+                 spatial_output_height, spatial_output_width, shape_output_channels,
+                 fc_dimensions, fc_layers,
+                 ):
+        super().__init__()
+        self.pos_emb = PositionalEmbedding(num_positions, polygon_dimension_per_head * polygon_heads)
+        self.poly_emb = PolygonEmbedding(polygon_dimension_per_head * polygon_heads, polygon_heads, polygon_layers)
+        self.spatial_emb = SpatialEmbedding(num_shapes, polygon_dimension_per_head * polygon_heads, spatial_output_height, spatial_output_width)
+        self.shape_emb = ShapeEmbedding(num_channels, shape_output_channels)
+        self.fc_net = FCNet(shape_output_channels[-1], num_outputs, fc_dimensions, fc_layers)
+
+    def forward(self, x):
+        x = self.pos_emb(x)
+        x = self.poly_emb(x)
+        x = self.spatial_emb(x)
+        x = self.shape_emb(x)
+        x = self.fc_net(x)
+        return x
 
 def main():
     # MultiShapeEmbedding에 필요한 파라메터
