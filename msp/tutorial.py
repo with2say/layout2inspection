@@ -4,14 +4,14 @@ from model import *
 from polytoimage import *
 
 
-def main(n_samples=10000, n_epoch=200, model_kwargs={}):
+def main(dataset_kwargs={}, n_epoch=200, model_kwargs={}):
     # input params
-    n_samples = n_samples
-    n_channels = 2
-    range_shape = [1, 3]
-    range_polygon = [3, 5]
-    n_positions = 2
-    n_outputs = 1
+    n_samples = dataset_kwargs['n_samples']
+    n_channels = dataset_kwargs['n_channels']
+    range_shape = dataset_kwargs['range_shape']
+    range_polygon = dataset_kwargs['range_polygon']
+    n_positions = dataset_kwargs['n_positions']
+    n_outputs = dataset_kwargs['n_outputs']
 
     # checkpoint_path = '/workspaces/layout2inspection/lightning_logs/version_15/checkpoints/epoch=21-step=704.ckpt'
 
@@ -33,23 +33,6 @@ def main(n_samples=10000, n_epoch=200, model_kwargs={}):
         **model_kwargs,
     )
 
-    # Create the model
-    # layer = Polygons2Area(d_model=64,
-    #                       nhead=16,
-    #                       num_layers=16,
-    #                       num_position=num_position,
-    #                       num_polygons=np.max(polygon_range),
-    #                       dropout=0.01)
-
-    # d_model = num_position
-    # nhead = 2
-    # num_layers = 2
-    # dim_feedforward = 4
-    # layer = HierarchicalTransformer(d_model=num_position,
-    #                                 nhead=nhead,
-    #                                 num_layers=num_layers,
-    #                                 dim_feedforward=dim_feedforward)
-
     model = PolygonRegressor(layer)
     # model.load_from_checkpoint(checkpoint_path)
 
@@ -60,21 +43,28 @@ def main(n_samples=10000, n_epoch=200, model_kwargs={}):
     y_true, y_pred = get_predictions(trainer, model, data_module)
     print(np.shape(y_true), np.shape(y_pred))
     evaluate_regression(y_true, y_pred)
-
     plot_true_vs_predicted(y_true, y_pred)
 
 
-
 if __name__ == '__main__':
+    dataset_kwargs = {
+        'n_samples': 10000,
+        'n_channels': 2,
+        'range_shape': [1, 3],
+        'range_polygon': [3, 5],
+        'n_positions': 2,
+        'n_outputs': 1,
+    }
+    
     model_kwargs = {
         'polygon_heads': 8, 'polygon_dimension_per_head': 2, 'polygon_layers': 3, 
         'spatial_output_height': 16, 'spatial_output_width': 16, 
         'shape_output_channels': [32, 64, 128],
-        'fc_dimensions': 32, 'fc_layers': 1, 'fc_use_batchnorm':False,
+        'fc_dimensions': 32, 'fc_layers': 1, 'fc_use_batchnorm': False,
     }
     
     main(
-        n_samples=10, 
+        dataset_kwargs=dataset_kwargs,
         n_epoch=1,
         model_kwargs=model_kwargs,
     )    
