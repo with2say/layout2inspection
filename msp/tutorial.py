@@ -70,7 +70,7 @@ if __name__ == '__main__':
         'polygon_heads': 8, 'polygon_dimension_per_head': 2, 'polygon_layers': 3, 
         'spatial_output_height': 16, 'spatial_output_width': 16, 
         'shape_output_channels': [32, 64, 128],
-        'fc_dimensions': 32, 'fc_layers': 1, 
+        'fc_dimensions': 32, 'fc_layers': 1, 'fc_use_batchnorm':False,
     }
     
     main(

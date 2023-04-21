@@ -17,7 +17,6 @@ def get_trainer(n_epoch):
     # 조기 종료 설정
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
-        min_delta=0.00001,
         patience=20,
         verbose=True,
         mode="min",
@@ -52,7 +51,9 @@ def get_trainer(n_epoch):
         max_epochs=n_epoch,
         # gradient_clip_val=gradient_clip_val,
         log_every_n_steps=30,
-        callbacks=[checkpoint_callback], #, swa_callback, early_stop_callback
+        callbacks=[checkpoint_callback,
+                   early_stop_callback,
+                   ], #, swa_callback, 
     )
     return trainer
 
