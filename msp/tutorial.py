@@ -25,10 +25,14 @@ def main(dataset_kwargs={}, n_epoch=200, model_kwargs={}):
     print('null mse:', np.var(targets))
     print(data.shape, targets.shape)
 
-    data_module = PolygonAreaDataModule(data, targets, batch_size=128, val_split=0.1, test_split=0.1, num_workers=2)
+    data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=2)
 
     # MultiShapeEmbedding 객체 생성
-    layer = MultiShapeEmbedding(
+    # layer = MultiShapeEmbedding(
+    #     n_positions, n_polygons, n_shapes, n_channels, n_outputs,
+    #     **model_kwargs,
+    # )
+    layer = SimpleEmbedding(
         n_positions, n_polygons, n_shapes, n_channels, n_outputs,
         **model_kwargs,
     )
@@ -36,7 +40,8 @@ def main(dataset_kwargs={}, n_epoch=200, model_kwargs={}):
     model = PolygonRegressor(layer)
     # model.load_from_checkpoint(checkpoint_path)
 
-    trainer = get_trainer(n_epoch)
+    # trainer = get_trainer(n_epoch)
+    trainer = pl.Trainer(max_epochs=n_epoch, log_every_n_steps=1)
     trainer.fit(model, data_module)
     trainer.validate(model, datamodule=data_module)
     trainer.test(model, datamodule=data_module)
@@ -61,6 +66,10 @@ if __name__ == '__main__':
         'polygon_heads': 8, 'polygon_dimension_per_head': 2, 'polygon_layers': 3, 
         'spatial_output_height': 16, 'spatial_output_width': 16, 
         'shape_output_channels': [32, 64, 128],
+        'fc_dimensions': 32, 'fc_layers': 1, 'fc_use_batchnorm': False,
+    }
+    
+    model_kwargs = {
         'fc_dimensions': 32, 'fc_layers': 1, 'fc_use_batchnorm': False,
     }
     

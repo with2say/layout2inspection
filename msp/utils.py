@@ -52,7 +52,7 @@ def get_trainer(n_epoch):
         accelerator=accelerator,
         max_epochs=n_epoch,
         # gradient_clip_val=gradient_clip_val,
-        log_every_n_steps=30,
+        log_every_n_steps=1,
         callbacks=[checkpoint_callback,
                 #    early_stop_callback,
                 #    swa_callback,

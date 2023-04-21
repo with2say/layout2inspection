@@ -20,12 +20,12 @@ class PolygonRegressor(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self.get_loss(batch)
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_step=True, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss = self.get_loss(batch)
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, on_step=True, on_epoch=True)
         return loss
 
     def test_step(self, batch, batch_idx):

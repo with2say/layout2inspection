@@ -198,6 +198,23 @@ class MultiShapeEmbedding(nn.Module):
         x = self.fc_net(x)
         return x
 
+
+class SimpleEmbedding(nn.Module):
+    def __init__(self, 
+                 n_positions, n_polygons, n_shapes, n_channels, num_outputs,
+                 fc_dimensions, fc_layers, fc_use_batchnorm=False,
+                 ):
+        super().__init__()
+        self.dims = n_positions*n_polygons*n_shapes*n_channels
+        self.fc_net = FCNet(self.dims, num_outputs, fc_dimensions, fc_layers, use_batchnorm=fc_use_batchnorm)
+
+    def forward(self, x):
+        batch_size, n_channels, n_shapes, n_polygons, n_positions = x.shape
+        x = x.view(batch_size, self.dims)
+        x = self.fc_net(x)
+        return x
+
+
 def main():
     # MultiShapeEmbedding에 필요한 파라메터
     n_positions = 2

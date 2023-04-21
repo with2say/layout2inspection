@@ -1,2 +1,2 @@
-torchlightning
+lightning
 opencv-python
