@@ -1,7 +1,7 @@
 import numpy as np
 
 from torch.utils.data import DataLoader, random_split, Dataset
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 
 
 class CustomDataset(Dataset):
