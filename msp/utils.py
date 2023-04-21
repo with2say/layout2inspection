@@ -8,8 +8,8 @@ import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, StochasticWeightAveraging
-from lightning.pytorch.callbacks import RichProgressBar
-from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
+from pytorch_lightning.callbacks import RichProgressBar
+from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 
 
 def get_trainer(n_epoch):
@@ -56,6 +56,7 @@ def get_trainer(n_epoch):
         callbacks=[checkpoint_callback,
                    early_stop_callback,
                    swa_callback,
+                   RichProgressBar(),
                    ], #, 
     )
     return trainer
