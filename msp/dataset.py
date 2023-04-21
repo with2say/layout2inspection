@@ -90,26 +90,26 @@ def generate_dataset(n_samples, n_channels, range_shape, range_polygon):
     return data, targets
 
 
-# def draw_polygons(image, polygons, color=(0, 255, 0), thickness=1):
-#     import cv2
-#     for polygon in polygons:
-#         points = polygon.astype(np.int32).reshape((-1, 1, 2))
-#         image = cv2.polylines(image, [points], isClosed=True, color=color, thickness=thickness)
-#         image = cv2.fillPoly(image, [points], color=color)  # Fill the polygon
-#     return image
-
-
 def draw_polygons(image, polygons, color=(0, 255, 0), thickness=1):
-    from PIL import Image, ImageDraw
-    img_pil = Image.fromarray(image)
-    draw = ImageDraw.Draw(img_pil)
-
+    import cv2
     for polygon in polygons:
-        points = polygon.astype(np.int32).reshape((-1, 2)).tolist()
-        # draw.line(points + [points[0]], fill=color, width=thickness)
-        draw.polygon(points, fill=color)
+        points = polygon.astype(np.int32).reshape((-1, 1, 2))
+        image = cv2.polylines(image, [points], isClosed=True, color=color, thickness=thickness)
+        image = cv2.fillPoly(image, [points], color=color)  # Fill the polygon
+    return image
 
-    return np.array(img_pil)
+
+# def draw_polygons(image, polygons, color=(0, 255, 0), thickness=1):
+#     from PIL import Image, ImageDraw
+#     img_pil = Image.fromarray(image)
+#     draw = ImageDraw.Draw(img_pil)
+
+#     for polygon in polygons:
+#         points = polygon.astype(np.int32).reshape((-1, 2)).tolist()
+#         # draw.line(points + [points[0]], fill=color, width=thickness)
+#         draw.polygon(points, fill=color)
+
+#     return np.array(img_pil)
 
 
 def display_polygons(polygons, scale=100, wait_time=3):
