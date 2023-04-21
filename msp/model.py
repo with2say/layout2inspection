@@ -12,20 +12,27 @@ class PolygonRegressor(pl.LightningModule):
         self.lr = lr
         self.save_hyperparameters()
 
-    def training_step(self, batch, batch_idx):
+    def get_loss(self, batch):
         polygons, areas = batch
         outputs = self.layer(polygons)
         loss = nn.MSELoss()(outputs, areas)
+        return loss
+
+    def training_step(self, batch, batch_idx):
+        loss = self.get_loss(batch)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        polygons, areas = batch
-        outputs = self.layer(polygons)
-        loss = nn.MSELoss()(outputs, areas)
+        loss = self.get_loss(batch)
         self.log("val_loss", loss)
         return loss
 
+    def test_step(self, batch, batch_idx):
+        loss = self.get_loss(batch)
+        self.log("test_loss", loss)
+        return loss
+    
     def predict_step(self, batch, batch_idx):
         x, y = batch
         with torch.no_grad():

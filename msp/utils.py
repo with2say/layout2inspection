@@ -3,21 +3,23 @@ import numpy as np
 import seaborn as sns
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
+
 import torch
 import torch.nn.functional as F
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, StochasticWeightAveraging
+from lightning.pytorch.callbacks import RichProgressBar
+from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
 
 def get_trainer(n_epoch):
-    import pytorch_lightning as pl
-    from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, StochasticWeightAveraging
-
     # 기울기 클리핑 설정
     gradient_clip_val = 1.0
 
     # 조기 종료 설정
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
-        patience=20,
+        patience=30,
         verbose=True,
         mode="min",
     )
@@ -25,7 +27,7 @@ def get_trainer(n_epoch):
     # 체크포인트 저장 설정
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
-        dirpath="checkpoints",
+        # dirpath="checkpoints",
         filename="best-checkpoint",
         save_top_k=1,
         verbose=True,
@@ -34,7 +36,7 @@ def get_trainer(n_epoch):
 
     # Stochastic Weight Averaging 설정
     swa_callback = StochasticWeightAveraging(
-        swa_epoch_start=100,
+        swa_epoch_start=1,
         swa_lrs=1e-5,
         # verbose=True,
     )
@@ -53,7 +55,8 @@ def get_trainer(n_epoch):
         log_every_n_steps=30,
         callbacks=[checkpoint_callback,
                    early_stop_callback,
-                   ], #, swa_callback, 
+                   swa_callback,
+                   ], #, 
     )
     return trainer
 

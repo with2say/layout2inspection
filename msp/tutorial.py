@@ -39,6 +39,7 @@ def main(dataset_kwargs={}, n_epoch=200, model_kwargs={}):
     trainer = get_trainer(n_epoch)
     trainer.fit(model, data_module)
     trainer.validate(model, datamodule=data_module)
+    trainer.test(model, datamodule=data_module)
 
     y_true, y_pred = get_predictions(trainer, model, data_module)
     print(np.shape(y_true), np.shape(y_pred))
@@ -48,7 +49,7 @@ def main(dataset_kwargs={}, n_epoch=200, model_kwargs={}):
 
 if __name__ == '__main__':
     dataset_kwargs = {
-        'n_samples': 10000,
+        'n_samples': 20,
         'n_channels': 2,
         'range_shape': [1, 3],
         'range_polygon': [3, 5],
