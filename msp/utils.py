@@ -20,7 +20,7 @@ def get_trainer(n_epoch):
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
         patience=30,
-        verbose=True,
+        # verbose=True,
         mode="min",
     )
 
@@ -30,7 +30,7 @@ def get_trainer(n_epoch):
         # dirpath="checkpoints",
         filename="best-checkpoint",
         save_top_k=1,
-        verbose=True,
+        # verbose=True,
         mode="min",
     )
 
@@ -54,10 +54,10 @@ def get_trainer(n_epoch):
         # gradient_clip_val=gradient_clip_val,
         log_every_n_steps=30,
         callbacks=[checkpoint_callback,
-                   early_stop_callback,
-                   swa_callback,
-                   RichProgressBar(),
-                   ], #, 
+                #    early_stop_callback,
+                #    swa_callback,
+                #    RichProgressBar(),
+                   ],
     )
     return trainer
 

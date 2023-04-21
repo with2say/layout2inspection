@@ -66,6 +66,6 @@ if __name__ == '__main__':
     
     main(
         dataset_kwargs=dataset_kwargs,
-        n_epoch=1,
+        n_epoch=3,
         model_kwargs=model_kwargs,
     )    
