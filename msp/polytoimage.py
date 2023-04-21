@@ -77,7 +77,6 @@ class PolygonEmbedding(nn.Module):
             nn.Linear(d_model, d_model),
             nn.ReLU(),
             nn.Linear(d_model, d_model),
-            nn.ReLU(),
         )
 
     def forward(self, x):
