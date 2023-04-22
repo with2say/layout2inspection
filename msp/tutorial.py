@@ -25,7 +25,7 @@ def main(dataset_kwargs={}, n_epoch=200, model_kwargs={}):
     print('null mse:', np.var(targets))
     print(data.shape, targets.shape)
 
-    data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, num_workers=2)
+    data_module = PolygonAreaDataModule(data, targets, batch_size=256, val_split=0.1, test_split=0.1, aug_prob=0.3, num_workers=2)
 
     # MultiShapeEmbedding 객체 생성
     # layer = MultiShapeEmbedding(
