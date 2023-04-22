@@ -66,8 +66,6 @@ class PolygonEmbedding(nn.Module):
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
 
-        # self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead)
-
         self.multihead_attention_layers = nn.ModuleList([
             nn.MultiheadAttention(embed_dim=d_model, num_heads=nhead, batch_first=True)
             for _ in range(num_layers)
@@ -83,14 +81,11 @@ class PolygonEmbedding(nn.Module):
         # x: (batch_size, n_channels, n_shapes, n_polygons, d_model)
         batch_size, n_channels, n_shapes, n_polygons, d_model = x.shape
         x = x.view(-1, n_polygons, d_model)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
-        # x = x.permute(1, 0, 2)  # Shape: (n_polygons, batch_size * n_channels * n_shapes, d_model)
 
         for layer in self.multihead_attention_layers:
             attn_output, _ = layer(x, x, x)  # Self-attention
             x = x + attn_output
             x = self.norm1(x)
-
-        # x = x.permute(1, 0, 2)  # Shape: (batch_size * n_channels * n_shapes, n_polygons, d_model)
 
         ff_output = self.positionwise_feedforward(x)
         x = x + ff_output
@@ -134,19 +129,40 @@ class ConvBlock(nn.Module):
 
 
 class ShapeEmbedding(nn.Module):
-    def __init__(self, n_channels, out_channels=[16, 32, 64]):
+    def __init__(self, in_channels, out_channels=[16, 32, 64]):
         super().__init__()
-        self.conv_1 = ConvBlock(n_channels, out_channels[0], 3, 1, 1, 2)
-        self.conv_2 = ConvBlock(out_channels[0], out_channels[1], 3, 1, 1, 2)
-        self.conv_3 = ConvBlock(out_channels[1], out_channels[2], 3, 1, 1, 2)
+
+        # Create a list of convolution blocks according to the length of out_channels
+        self.conv_blocks = nn.ModuleList([
+            ConvBlock(in_channels if i == 0 else out_channels[i - 1], out_channels[i], 3, 1, 1, 2)
+            for i in range(len(out_channels))
+        ])
 
     def forward(self, x):
         # x: (batch_size, n_channels, h, w)
-        x = self.conv_1(x)
-        x = self.conv_2(x)
-        x = self.conv_3(x)
+
+        # Apply each convolution block
+        for conv_block in self.conv_blocks:
+            x = conv_block(x)
+
         x = x.mean(dim=[2, 3])  # Global Average Pooling
         return x  # Shape: (batch_size, d_model)
+    
+
+# class ShapeEmbedding(nn.Module):
+#     def __init__(self, n_channels, out_channels=[16, 32, 64]):
+#         super().__init__()
+#         self.conv_1 = ConvBlock(n_channels, out_channels[0], 3, 1, 1, 2)
+#         self.conv_2 = ConvBlock(out_channels[0], out_channels[1], 3, 1, 1, 2)
+#         self.conv_3 = ConvBlock(out_channels[1], out_channels[2], 3, 1, 1, 2)
+
+#     def forward(self, x):
+#         # x: (batch_size, n_channels, h, w)
+#         x = self.conv_1(x)
+#         x = self.conv_2(x)
+#         x = self.conv_3(x)
+#         x = x.mean(dim=[2, 3])  # Global Average Pooling
+#         return x  # Shape: (batch_size, d_model)
 
 
 class FCNet(nn.Module):
@@ -222,25 +238,31 @@ def main():
     n_shapes = 3
     n_channels = 4
     n_outputs = 1
-    d_model = 2
-    nhead = 2
-    n_layers = 3
-    out_h = 32
-    out_w = 32
+
+    polygon_dimension_per_head, polygon_heads, polygon_layers = 2, 2, 2
+    spatial_output_height, spatial_output_width, shape_output_channels = 16, 16, [16]
+    fc_dimensions, fc_layers = 2, 2
+    fc_use_batchnorm=False
+
     
     # MultiShapeEmbedding 객체 생성
-    multi_shape_embedding = MultiShapeEmbedding(n_positions, n_polygons, n_shapes, n_channels, n_outputs,
-                                                d_model, nhead, n_layers, out_h, out_w)
+    layer = MultiShapeEmbedding(
+        n_positions, n_polygons, n_shapes, n_channels, n_outputs,
+        polygon_dimension_per_head, polygon_heads, polygon_layers, 
+        spatial_output_height, spatial_output_width, shape_output_channels,
+        fc_dimensions, fc_layers, fc_use_batchnorm
+    )
 
     # 무작위 데이터셋 생성
     batch_size = 2
     input_data = torch.randn(batch_size, n_channels, n_shapes, n_polygons, n_positions)
 
     # MultiShapeEmbedding 실행
-    output = multi_shape_embedding(input_data)
+    output = layer(input_data)
 
     print(f"Input shape: {input_data.shape}")
     print(f"Output shape: {output.shape}")
+
 
 if __name__ == "__main__":
     main()

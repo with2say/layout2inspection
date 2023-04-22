@@ -1,5 +1,6 @@
 import numpy as np
-
+import torch
+import random
 from torch.utils.data import DataLoader, random_split, Dataset
 import lightning.pytorch as pl
 
@@ -14,6 +15,39 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.data[idx], self.targets[idx]
+
+
+class ShuffleRollingAugmentationDataset(Dataset):
+    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, augment=True):
+        self.data = data
+        self.targets = targets
+        self.shuffle_axes = shuffle_axes if shuffle_axes is not None else []
+        self.rolling_axes = rolling_axes if rolling_axes is not None else []
+        self.augment = augment
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        data = self.data[idx]
+        target = self.targets[idx]
+
+        if self.augment:
+            for axis in self.shuffle_axes:
+                data = self.shuffle(data, axis=axis)
+                
+            for axis in self.rolling_axes:
+                data = self.roll(data, axis=axis)
+        
+        return data, target
+
+    def shuffle(self, data, axis):
+        idx = torch.randperm(data.shape[axis])
+        return data.index_select(axis, idx)
+
+    def roll(self, data, axis):
+        shift = random.randint(0, data.shape[axis] - 1)
+        return torch.roll(data, shifts=shift, dims=axis)
 
 
 def shoelace_formula(coords):
@@ -133,13 +167,15 @@ class PolygonAreaDataModule(pl.LightningDataModule):
         self.test_split = test_split
         self.num_workers = num_workers
 
-    def setup(self, stage=None):
-        dataset = CustomDataset(self.data, self.targets)
+    def setup(self, stage=None):   
+        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets,
+                                                    shuffle_axes=2, rolling_axes=3, augment=False)
         num_val = int(len(dataset) * self.val_split)
         num_test = int(len(dataset) * self.test_split)
         num_train = len(dataset) - num_val - num_test
 
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(dataset, [num_train, num_val, num_test])
+        self.train_dataset.augment = True
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
@@ -166,6 +202,8 @@ def main():
     for polygons in data:
         # print(polygons)
         display_polygons(polygons, scale=200, wait_time=1000)
+
+
 
 
 if __name__ == '__main__':
