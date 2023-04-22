@@ -159,17 +159,18 @@ def display_polygons(polygons, scale=100, wait_time=3):
 
 
 class PolygonAreaDataModule(pl.LightningDataModule):
-    def __init__(self, data, targets, batch_size=32, val_split=0.2, test_split=0.1, num_workers=3):
+    def __init__(self, data, targets, batch_size=32, val_split=0.2, test_split=0.1, aug_prob=0, num_workers=3):
         super().__init__()
         self.data = data
         self.targets = targets
         self.batch_size = batch_size
         self.val_split = val_split
         self.test_split = test_split
+        self.aug_prob = aug_prob
         self.num_workers = num_workers
 
     def setup(self, stage=None):   
-        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets)
+        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets, p=self.aug_prob)
         num_val = int(len(dataset) * self.val_split)
         num_test = int(len(dataset) * self.test_split)
         num_train = len(dataset) - num_val - num_test
@@ -196,7 +197,7 @@ def main():
     num_samples = 10
     seq_length_range = (1, 3)
     polygon_length_range = (2, 3)
-    data, targets = generaBte_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range)
+    data, targets = generate_data_with_negative_padding(num_samples, seq_length_range, polygon_length_range)
     print(np.shape(data), np.shape(targets))
 
     # Display polygons

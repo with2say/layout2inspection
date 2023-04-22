@@ -121,3 +121,17 @@ def evaluate_regression(y_true, y_pred):
     print(f'MSE: {mse:.4f}, MAE: {mae:.4f}, R2: {r2:.4f}')
     
     return mse, mae, r2
+
+
+if __name__ == '__main__':
+    import torch
+    def shuffle(data, axis):
+        idx = torch.randperm(data.shape[axis])
+        return data.index_select(axis, idx)
+
+    x = torch.tensor([ [[1, 2], [2, 3]],[[4, 5], [6, 7]] ])
+    print(x)
+    print(x.shape)
+    x = shuffle(x, axis=1)
+    print(x)
+
