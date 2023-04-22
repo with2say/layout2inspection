@@ -1,7 +1,6 @@
 import random
 import numpy as np
 import torch
-import random
 from torch.utils.data import DataLoader, random_split, Dataset
 import lightning.pytorch as pl
 
@@ -24,7 +23,6 @@ class ShuffleRollingAugmentationDataset(Dataset):
         self.targets = targets
         self.shuffle_axes = shuffle_axes if shuffle_axes is not None else []
         self.rolling_axes = rolling_axes if rolling_axes is not None else []
-        self.augment = augment
         self.p = p
 
     def __len__(self):
@@ -171,14 +169,14 @@ class PolygonAreaDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def setup(self, stage=None):   
-        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets,
-                                                    shuffle_axes=2, rolling_axes=3, augment=False)
+        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets)
         num_val = int(len(dataset) * self.val_split)
         num_test = int(len(dataset) * self.test_split)
         num_train = len(dataset) - num_val - num_test
 
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(dataset, [num_train, num_val, num_test])
-        self.train_dataset.augment = True
+        self.train_dataset.shuffle_axes=2
+        self.train_dataset.rolling_axes=3
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
