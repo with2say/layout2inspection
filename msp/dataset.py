@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import torch
 import random
@@ -18,12 +19,13 @@ class CustomDataset(Dataset):
 
 
 class ShuffleRollingAugmentationDataset(Dataset):
-    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, augment=True):
+    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, p=0.3):
         self.data = data
         self.targets = targets
         self.shuffle_axes = shuffle_axes if shuffle_axes is not None else []
         self.rolling_axes = rolling_axes if rolling_axes is not None else []
         self.augment = augment
+        self.p = p
 
     def __len__(self):
         return len(self.data)
@@ -31,14 +33,15 @@ class ShuffleRollingAugmentationDataset(Dataset):
     def __getitem__(self, idx):
         data = self.data[idx]
         target = self.targets[idx]
-
-        if self.augment:
+        
+        if random.random() < self.p:
             for axis in self.shuffle_axes:
                 data = self.shuffle(data, axis=axis)
-                
+        
+        if random.random() < self.p:                
             for axis in self.rolling_axes:
                 data = self.roll(data, axis=axis)
-        
+            
         return data, target
 
     def shuffle(self, data, axis):
