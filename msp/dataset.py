@@ -25,8 +25,8 @@ class ShuffleRollingAugmentationDataset(Dataset):
         self.rolling_axes = rolling_axes if rolling_axes is not None else []
         self.p = p
 
-        self.pos_min=pos_min
-        self.pos_max=pos_max
+        self.pos_min = torch.tensor(pos_min, dtype=torch.float32)
+        self.pos_max = torch.tensor(pos_max, dtype=torch.float32)
 
     def __len__(self):
         return len(self.data)
