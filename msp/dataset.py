@@ -18,7 +18,7 @@ class CustomDataset(Dataset):
 
 
 class ShuffleRollingAugmentationDataset(Dataset):
-    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, p=0.3, pos_min=0, pos_max=1):
+    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, p=0.3, pos_min=[0, 0], pos_max=[1, 1]):
         self.data = data
         self.targets = targets
         self.shuffle_axes = shuffle_axes if shuffle_axes is not None else []
@@ -60,11 +60,11 @@ class ShuffleRollingAugmentationDataset(Dataset):
         return torch.roll(data, shifts=shift, dims=axis)
     
     def flip_lr(self, data):
-        data[..., 1] = self.pos_max[1] - (data[..., 1] - self.pos_min[1])
+        data[..., 0] = self.pos_max[0] - (data[..., 0] - self.pos_min[0])
         return data
 
     def flip_ud(self, data):
-        data[..., 0] = self.pos_max[0] - (data[..., 0] - self.pos_min[0])
+        data[..., 1] = self.pos_max[1] - (data[..., 1] - self.pos_min[1])
         return data
 
 
