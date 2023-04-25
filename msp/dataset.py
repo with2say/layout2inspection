@@ -60,11 +60,11 @@ class ShuffleRollingAugmentationDataset(Dataset):
         return torch.roll(data, shifts=shift, dims=axis)
     
     def flip_lr(self, data):
-        data[:, 1] = self.pos_max[1] - (data[:, 1] - self.pos_min[1])
+        data[..., 1] = self.pos_max[1] - (data[..., 1] - self.pos_min[1])
         return data
 
     def flip_ud(self, data):
-        data[:, 0] = self.pos_max[0] - (data[:, 0] - self.pos_min[0])
+        data[..., 0] = self.pos_max[0] - (data[..., 0] - self.pos_min[0])
         return data
 
 
