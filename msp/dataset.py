@@ -18,12 +18,15 @@ class CustomDataset(Dataset):
 
 
 class ShuffleRollingAugmentationDataset(Dataset):
-    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, p=0.3):
+    def __init__(self, data, targets, shuffle_axes=None, rolling_axes=None, p=0.3, pos_min=0, pos_max=1):
         self.data = data
         self.targets = targets
         self.shuffle_axes = shuffle_axes if shuffle_axes is not None else []
         self.rolling_axes = rolling_axes if rolling_axes is not None else []
         self.p = p
+
+        self.pos_min=pos_min
+        self.pos_max=pos_max
 
     def __len__(self):
         return len(self.data)
@@ -39,6 +42,12 @@ class ShuffleRollingAugmentationDataset(Dataset):
         if random.random() < self.p:                
             for axis in self.rolling_axes:
                 data = self.roll(data, axis=axis)
+        
+        if random.random() < self.p:
+            data = self.flip_lr(data)
+        
+        if random.random() < self.p:
+            data = self.flip_ud(data)
             
         return data, target
 
@@ -49,6 +58,14 @@ class ShuffleRollingAugmentationDataset(Dataset):
     def roll(self, data, axis):
         shift = random.randint(0, data.shape[axis] - 1)
         return torch.roll(data, shifts=shift, dims=axis)
+    
+    def flip_lr(self, data):
+        data[:, 1] = self.pos_max[1] - (data[:, 1] - self.pos_min[1])
+        return data
+
+    def flip_ud(self, data):
+        data[:, 0] = self.pos_max[0] - (data[:, 0] - self.pos_min[0])
+        return data
 
 
 def shoelace_formula(coords):
@@ -159,7 +176,7 @@ def display_polygons(polygons, scale=100, wait_time=3):
 
 
 class PolygonAreaDataModule(pl.LightningDataModule):
-    def __init__(self, data, targets, batch_size=32, val_split=0.2, test_split=0.1, aug_prob=0, num_workers=3):
+    def __init__(self, data, targets, batch_size=32, val_split=0.2, test_split=0.1, aug_prob=0.3, num_workers=3):
         super().__init__()
         self.data = data
         self.targets = targets
