@@ -186,6 +186,7 @@ class PolygonAreaDataModule(pl.LightningDataModule):
         self.aug_prob = aug_prob
         self.num_workers = num_workers
 
+
     def setup(self, stage=None):   
         dataset = ShuffleRollingAugmentationDataset(self.data, self.targets, p=0.0)
         num_val = int(len(dataset) * self.val_split)
@@ -195,7 +196,7 @@ class PolygonAreaDataModule(pl.LightningDataModule):
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(dataset, [num_train, num_val, num_test])
         self.train_dataset.shuffle_axes=2
         self.train_dataset.rolling_axes=3
-        self.train_dataset.p = aug_prob
+        self.train_dataset.p = self.aug_prob
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
