@@ -25,8 +25,6 @@ class ShuffleRollingAugmentationDataset(Dataset):
         self.rolling_axes = rolling_axes if rolling_axes is not None else []
         self.p = p
 
-        # self.pos_min = torch.tensor(pos_min, dtype=torch.float32)
-        # self.pos_max = torch.tensor(pos_max, dtype=torch.float32)
         self.pos_min = pos_min
         self.pos_max = pos_max
 
@@ -189,7 +187,7 @@ class PolygonAreaDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def setup(self, stage=None):   
-        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets, p=self.aug_prob)
+        dataset = ShuffleRollingAugmentationDataset(self.data, self.targets, p=0.0)
         num_val = int(len(dataset) * self.val_split)
         num_test = int(len(dataset) * self.test_split)
         num_train = len(dataset) - num_val - num_test
@@ -197,6 +195,7 @@ class PolygonAreaDataModule(pl.LightningDataModule):
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(dataset, [num_train, num_val, num_test])
         self.train_dataset.shuffle_axes=2
         self.train_dataset.rolling_axes=3
+        self.train_dataset.p = aug_prob
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
